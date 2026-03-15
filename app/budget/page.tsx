@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import ClientLayout from '@/components/ClientLayout'
 import DateNavigator from '@/components/DateNavigator'
+import Dialog from '@/components/Dialog'
 import { Account, BudgetCategory, BudgetTransaction } from '@/types'
 
 interface TransactionResponse {
   transactions: BudgetTransaction[]
   totalIncome: number
   totalExpense: number
+  totalExcluded: number
   net: number
 }
 
@@ -19,6 +21,7 @@ export default function BudgetPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [totalIncome, setTotalIncome] = useState(0)
   const [totalExpense, setTotalExpense] = useState(0)
+  const [totalExcluded, setTotalExcluded] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSavingAccount, setIsSavingAccount] = useState(false)
@@ -30,7 +33,8 @@ export default function BudgetPage() {
     toAccountId: '',
     categoryId: '',
     amount: '',
-    description: ''
+    description: '',
+    exclude: false
   })
 
   const [newAccount, setNewAccount] = useState({
@@ -42,6 +46,33 @@ export default function BudgetPage() {
     name: '',
     type: 'expense' as 'income' | 'expense'
   })
+
+  // Edit/Delete dialog states
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null)
+  const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null)
+  const [editingTransaction, setEditingTransaction] = useState<BudgetTransaction | null>(null)
+  const [deletingAccount, setDeletingAccount] = useState<Account | null>(null)
+  const [deletingCategory, setDeletingCategory] = useState<BudgetCategory | null>(null)
+  const [deletingTransaction, setDeletingTransaction] = useState<BudgetTransaction | null>(null)
+  const [editAccountName, setEditAccountName] = useState('')
+  const [editCategoryName, setEditCategoryName] = useState('')
+  const [editCategoryType, setEditCategoryType] = useState<'income' | 'expense'>('expense')
+  const [editTransactionForm, setEditTransactionForm] = useState({
+    accountId: '',
+    toAccountId: '',
+    categoryId: '',
+    type: 'expense' as 'income' | 'expense' | 'transfer',
+    amount: '',
+    description: '',
+    exclude: false,
+    transactionDate: ''
+  })
+  const [isEditingAccount, setIsEditingAccount] = useState(false)
+  const [isEditingCategory, setIsEditingCategory] = useState(false)
+  const [isEditingTransaction, setIsEditingTransaction] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false)
+  const [isDeletingTransaction, setIsDeletingTransaction] = useState(false)
 
   const filteredCategories = useMemo(
     () => categories.filter((c) => c.type === form.type),
@@ -113,6 +144,7 @@ export default function BudgetPage() {
       setTransactions(data.transactions)
       setTotalIncome(data.totalIncome)
       setTotalExpense(data.totalExpense)
+      setTotalExcluded(data.totalExcluded || 0)
     } catch (error) {
       console.error('Error fetching transactions', error)
     }
@@ -138,7 +170,8 @@ export default function BudgetPage() {
         type: form.type,
         amount: Number(form.amount),
         description: form.description,
-        transactionDate: dateInputValue(currentDate)
+        transactionDate: dateInputValue(currentDate),
+        exclude: form.exclude
       }
 
       if (form.type === 'transfer') {
@@ -154,7 +187,7 @@ export default function BudgetPage() {
       })
 
       if (res.ok) {
-        setForm((prev) => ({ ...prev, amount: '', description: '', toAccountId: '' }))
+        setForm((prev) => ({ ...prev, amount: '', description: '', toAccountId: '', exclude: false }))
         await Promise.all([fetchAccounts(), fetchTransactions(currentDate)])
       }
     } catch (error) {
@@ -211,6 +244,181 @@ export default function BudgetPage() {
     }
   }
 
+  // Edit Account
+  const handleEditAccount = (account: Account) => {
+    setEditingAccount(account)
+    setEditAccountName(account.name)
+  }
+
+  const handleSaveEditAccount = async () => {
+    if (!editingAccount || !editAccountName) return
+    setIsEditingAccount(true)
+    try {
+      const res = await fetch(`/api/budget/accounts/${editingAccount.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editAccountName })
+      })
+      if (res.ok) {
+        setEditingAccount(null)
+        await fetchAccounts()
+      }
+    } catch (error) {
+      console.error('Error updating account', error)
+    } finally {
+      setIsEditingAccount(false)
+    }
+  }
+
+  // Delete Account
+  const handleDeleteAccount = (account: Account) => {
+    setDeletingAccount(account)
+  }
+
+  const confirmDeleteAccount = async () => {
+    if (!deletingAccount) return
+    setIsDeletingAccount(true)
+    try {
+      const res = await fetch(`/api/budget/accounts/${deletingAccount.id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setDeletingAccount(null)
+        await fetchAccounts()
+      }
+    } catch (error) {
+      console.error('Error deleting account', error)
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }
+
+  // Edit Category
+  const handleEditCategory = (category: BudgetCategory) => {
+    setEditingCategory(category)
+    setEditCategoryName(category.name)
+    setEditCategoryType(category.type as 'income' | 'expense')
+  }
+
+  const handleSaveEditCategory = async () => {
+    if (!editingCategory || !editCategoryName) return
+    setIsEditingCategory(true)
+    try {
+      const res = await fetch(`/api/budget/categories/${editingCategory.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editCategoryName,
+          type: editCategoryType
+        })
+      })
+      if (res.ok) {
+        setEditingCategory(null)
+        await fetchCategories()
+      }
+    } catch (error) {
+      console.error('Error updating category', error)
+    } finally {
+      setIsEditingCategory(false)
+    }
+  }
+
+  // Delete Category
+  const handleDeleteCategory = (category: BudgetCategory) => {
+    setDeletingCategory(category)
+  }
+
+  const confirmDeleteCategory = async () => {
+    if (!deletingCategory) return
+    setIsDeletingCategory(true)
+    try {
+      const res = await fetch(`/api/budget/categories/${deletingCategory.id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setDeletingCategory(null)
+        await fetchCategories()
+        // Reset form if the deleted category was selected
+        if (form.categoryId === deletingCategory.id) {
+          setForm((prev) => ({ ...prev, categoryId: '' }))
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting category', error)
+    } finally {
+      setIsDeletingCategory(false)
+    }
+  }
+
+  // Edit Transaction
+  const handleEditTransaction = (transaction: BudgetTransaction) => {
+    setEditingTransaction(transaction)
+    setEditTransactionForm({
+      accountId: transaction.accountId,
+      toAccountId: transaction.toAccountId || '',
+      categoryId: transaction.categoryId || '',
+      type: transaction.type as 'income' | 'expense' | 'transfer',
+      amount: String(transaction.amount),
+      description: transaction.description || '',
+      exclude: transaction.exclude,
+      transactionDate: dateInputValue(new Date(transaction.transactionDate))
+    })
+  }
+
+  const handleSaveEditTransaction = async () => {
+    if (!editingTransaction) return
+    setIsEditingTransaction(true)
+    try {
+      const res = await fetch(`/api/budget/transactions/${editingTransaction.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: editTransactionForm.accountId,
+          toAccountId: editTransactionForm.toAccountId || null,
+          categoryId: editTransactionForm.categoryId || null,
+          type: editTransactionForm.type,
+          amount: Number(editTransactionForm.amount),
+          description: editTransactionForm.description,
+          exclude: editTransactionForm.exclude,
+          transactionDate: editTransactionForm.transactionDate
+        })
+      })
+      if (res.ok) {
+        setEditingTransaction(null)
+        await fetchTransactions(currentDate)
+        await fetchAccounts()
+      }
+    } catch (error) {
+      console.error('Error updating transaction', error)
+    } finally {
+      setIsEditingTransaction(false)
+    }
+  }
+
+  // Delete Transaction
+  const handleDeleteTransaction = (transaction: BudgetTransaction) => {
+    setDeletingTransaction(transaction)
+  }
+
+  const confirmDeleteTransaction = async () => {
+    if (!deletingTransaction) return
+    setIsDeletingTransaction(true)
+    try {
+      const res = await fetch(`/api/budget/transactions/${deletingTransaction.id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setDeletingTransaction(null)
+        await fetchTransactions(currentDate)
+        await fetchAccounts()
+      }
+    } catch (error) {
+      console.error('Error deleting transaction', error)
+    } finally {
+      setIsDeletingTransaction(false)
+    }
+  }
+
   return (
     <ClientLayout>
       <div className="max-w-6xl mx-auto">
@@ -223,7 +431,7 @@ export default function BudgetPage() {
 
         <DateNavigator currentDate={currentDate} onDateChange={setCurrentDate} />
 
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="grid md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
             <p className="text-sm text-gray-400">Income (hari ini)</p>
             <p className="text-2xl font-semibold text-green-400">{formatCurrency(totalIncome)}</p>
@@ -231,6 +439,10 @@ export default function BudgetPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
             <p className="text-sm text-gray-400">Expense (hari ini)</p>
             <p className="text-2xl font-semibold text-red-400">{formatCurrency(totalExpense)}</p>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+            <p className="text-sm text-gray-400">Excluded Expense</p>
+            <p className="text-2xl font-semibold text-yellow-400">{formatCurrency(totalExcluded)}</p>
           </div>
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
             <p className="text-sm text-gray-400">Net (hari ini)</p>
@@ -365,6 +577,21 @@ export default function BudgetPage() {
                 />
               </div>
 
+              {form.type === 'expense' && (
+                <div className="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded p-3">
+                  <input
+                    type="checkbox"
+                    id="exclude"
+                    checked={form.exclude}
+                    onChange={(e) => setForm((prev) => ({ ...prev, exclude: e.target.checked }))}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                  <label htmlFor="exclude" className="text-sm text-gray-300 cursor-pointer">
+                    ⚠️ Exclude
+                  </label>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting || filteredCategories.length === 0 || accounts.length === 0}
@@ -417,9 +644,24 @@ export default function BudgetPage() {
                         <p className="text-white font-medium">{a.name}</p>
                         <p className="text-xs text-gray-400">Saldo</p>
                       </div>
-                      <p className={`text-lg font-semibold ${Number(a.balance) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                        {formatCurrency(Number(a.balance))}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <p className={`text-lg font-semibold ${Number(a.balance) >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                          {formatCurrency(Number(a.balance))}
+                        </p>
+                        <button
+                          onClick={() => handleEditAccount(a)}
+                          className="px-2 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAccount(a)}
+                          disabled={isDeletingAccount}
+                          className="px-2 py-1 text-xs bg-red-700 hover:bg-red-600 disabled:bg-gray-700 text-white rounded"
+                        >
+                          Del
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -461,11 +703,28 @@ export default function BudgetPage() {
               {categories.length === 0 ? (
                 <p className="text-gray-400">Belum ada kategori budget.</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
                   {categories.map((c) => (
-                    <div key={c.id} className="bg-gray-800 border border-gray-700 rounded p-3">
-                      <p className="text-white font-medium">{c.name}</p>
-                      <p className="text-xs text-gray-400">{c.type}</p>
+                    <div key={c.id} className="bg-gray-800 border border-gray-700 rounded p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-medium">{c.name}</p>
+                        <p className="text-xs text-gray-400">{c.type}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditCategory(c)}
+                          className="px-2 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(c)}
+                          disabled={isDeletingCategory}
+                          className="px-2 py-1 text-xs bg-red-700 hover:bg-red-600 disabled:bg-gray-700 text-white rounded"
+                        >
+                          Del
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -485,7 +744,14 @@ export default function BudgetPage() {
           ) : (
             <div className="space-y-3">
               {transactions.map((t) => (
-                <div key={t.id} className="bg-gray-800 border border-gray-700 rounded p-4">
+                <div
+                  key={t.id}
+                  className={`border rounded p-4 transition-all ${
+                    t.exclude
+                      ? 'bg-yellow-900 border-yellow-700 opacity-75'
+                      : 'bg-gray-800 border-gray-700'
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <div>
                       {t.type === 'transfer' ? (
@@ -496,15 +762,32 @@ export default function BudgetPage() {
                       ) : (
                         <>
                           <p className="text-white font-semibold">{t.category?.name || 'Kategori'}</p>
-                          <p className="text-sm text-gray-400">{t.account?.name || 'Akun'}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-gray-400">{t.account?.name || 'Akun'}</p>
+                            {t.exclude && <span className="text-xs bg-yellow-700 text-yellow-100 px-2 py-1 rounded">Excluded</span>}
+                          </div>
                         </>
                       )}
                     </div>
-                    <p className={`text-lg font-semibold ${
-                      t.type === 'income' ? 'text-green-300' : t.type === 'expense' ? 'text-red-300' : 'text-blue-300'
-                    }`}>
-                      {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{formatCurrency(Number(t.amount))}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p className={`text-lg font-semibold ${
+                        t.type === 'income' ? 'text-green-300' : t.type === 'expense' ? 'text-red-300' : 'text-blue-300'
+                      }`}>
+                        {t.type === 'income' ? '+' : t.type === 'transfer' ? '' : '-'}{formatCurrency(Number(t.amount))}
+                      </p>
+                      <button
+                        onClick={() => handleEditTransaction(t)}
+                        className="px-2 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTransaction(t)}
+                        className="px-2 py-1 text-xs bg-red-700 hover:bg-red-600 text-white rounded"
+                      >
+                        Del
+                      </button>
+                    </div>
                   </div>
                   {t.description && <p className="text-gray-300 text-sm mt-2">{t.description}</p>}
                 </div>
@@ -513,6 +796,352 @@ export default function BudgetPage() {
           )}
         </div>
       </div>
+
+      {/* Edit Account Dialog */}
+      <Dialog
+        isOpen={editingAccount !== null}
+        onClose={() => setEditingAccount(null)}
+        title="Edit Akun"
+      >
+        <form className="space-y-4" onSubmit={(e) => {
+          e.preventDefault()
+          handleSaveEditAccount()
+        }}>
+          <div>
+            <label className="block text-sm text-gray-300 mb-2">Nama Akun</label>
+            <input
+              type="text"
+              value={editAccountName}
+              onChange={(e) => setEditAccountName(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+              autoFocus
+            />
+          </div>
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => setEditingAccount(null)}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isEditingAccount || !editAccountName}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded"
+            >
+              {isEditingAccount ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog
+        isOpen={deletingAccount !== null}
+        onClose={() => setDeletingAccount(null)}
+        title="Hapus Akun"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-300">
+            Yakin hapus akun <span className="font-semibold text-white">"{deletingAccount?.name}"</span>?
+          </p>
+          <p className="text-sm text-gray-400">
+            Transaksi yang terkait tidak akan dihapus, tapi akan kehilangan referensi akun.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setDeletingAccount(null)}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded"
+            >
+              Batal
+            </button>
+            <button
+              onClick={confirmDeleteAccount}
+              disabled={isDeletingAccount}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white rounded"
+            >
+              {isDeletingAccount ? 'Menghapus...' : 'Hapus'}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog
+        isOpen={editingCategory !== null}
+        onClose={() => setEditingCategory(null)}
+        title="Edit Kategori"
+      >
+        <form className="space-y-4" onSubmit={(e) => {
+          e.preventDefault()
+          handleSaveEditCategory()
+        }}>
+          <div>
+            <label className="block text-sm text-gray-300 mb-2">Nama Kategori</label>
+            <input
+              type="text"
+              value={editCategoryName}
+              onChange={(e) => setEditCategoryName(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-300 mb-2">Tipe</label>
+            <select
+              value={editCategoryType}
+              onChange={(e) => setEditCategoryType(e.target.value as 'income' | 'expense')}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+            >
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => setEditingCategory(null)}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isEditingCategory || !editCategoryName}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded"
+            >
+              {isEditingCategory ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Delete Category Dialog */}
+      <Dialog
+        isOpen={deletingCategory !== null}
+        onClose={() => setDeletingCategory(null)}
+        title="Hapus Kategori"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-300">
+            Yakin hapus kategori <span className="font-semibold text-white">"{deletingCategory?.name}"</span>?
+          </p>
+          <p className="text-sm text-gray-400">
+            Transaksi yang terkait tidak akan dihapus, tapi akan kehilangan referensi kategori.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setDeletingCategory(null)}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded"
+            >
+              Batal
+            </button>
+            <button
+              onClick={confirmDeleteCategory}
+              disabled={isDeletingCategory}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white rounded"
+            >
+              {isDeletingCategory ? 'Menghapus...' : 'Hapus'}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Edit Transaction Dialog */}
+      <Dialog
+        isOpen={editingTransaction !== null}
+        onClose={() => setEditingTransaction(null)}
+        title="Edit Transaksi"
+      >
+        <form className="space-y-4" onSubmit={(e) => {
+          e.preventDefault()
+          handleSaveEditTransaction()
+        }}>
+          <div>
+            <label className="block text-sm text-gray-300 mb-2">Tipe Transaksi</label>
+            <select
+              value={editTransactionForm.type}
+              onChange={(e) => {
+                const newType = e.target.value as 'income' | 'expense' | 'transfer'
+                setEditTransactionForm((prev) => ({
+                  ...prev,
+                  type: newType,
+                  categoryId: newType !== 'transfer' ? categories.find((c) => c.type === newType)?.id || '' : '',
+                  toAccountId: newType === 'transfer' ? prev.toAccountId : ''
+                }))
+              }}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+            >
+              <option value="income">💵 Income</option>
+              <option value="expense">💸 Expense</option>
+              <option value="transfer">🔄 Transfer</option>
+            </select>
+          </div>
+
+          {editTransactionForm.type === 'transfer' ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">Dari Account</label>
+                <select
+                  value={editTransactionForm.accountId}
+                  onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, accountId: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+                >
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">Ke Account</label>
+                <select
+                  value={editTransactionForm.toAccountId}
+                  onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, toAccountId: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+                >
+                  <option value="">Pilih account tujuan</option>
+                  {accounts.map((a) => (
+                    a.id !== editTransactionForm.accountId && (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    )
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">Account</label>
+                <select
+                  value={editTransactionForm.accountId}
+                  onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, accountId: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+                >
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">Kategori</label>
+                <select
+                  value={editTransactionForm.categoryId}
+                  onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, categoryId: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+                >
+                  {categories.filter((c) => c.type === editTransactionForm.type).map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Jumlah</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={editTransactionForm.amount}
+                onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, amount: e.target.value }))}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-300 mb-2">Tanggal</label>
+              <input
+                type="date"
+                value={editTransactionForm.transactionDate}
+                onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, transactionDate: e.target.value }))}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-300 mb-2">Deskripsi</label>
+            <input
+              type="text"
+              value={editTransactionForm.description}
+              onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, description: e.target.value }))}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+            />
+          </div>
+
+          {editTransactionForm.type === 'expense' && (
+            <div className="flex items-center gap-3 bg-gray-800 border border-gray-700 rounded p-3">
+              <input
+                type="checkbox"
+                id="editExclude"
+                checked={editTransactionForm.exclude}
+                onChange={(e) => setEditTransactionForm((prev) => ({ ...prev, exclude: e.target.checked }))}
+                className="w-4 h-4 cursor-pointer"
+              />
+              <label htmlFor="editExclude" className="text-sm text-gray-300 cursor-pointer">
+                ⚠️ Exclude
+              </label>
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={() => setEditingTransaction(null)}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isEditingTransaction || !editTransactionForm.amount}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded"
+            >
+              {isEditingTransaction ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Delete Transaction Dialog */}
+      <Dialog
+        isOpen={deletingTransaction !== null}
+        onClose={() => setDeletingTransaction(null)}
+        title="Hapus Transaksi"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-300">
+            Yakin hapus transaksi ini?
+          </p>
+          {deletingTransaction && (
+            <div className="bg-gray-800 border border-gray-700 rounded p-3 space-y-2">
+              <p className="text-sm text-gray-400">{deletingTransaction.category?.name || deletingTransaction.account?.name}</p>
+              <p className="font-semibold text-white">{formatCurrency(Number(deletingTransaction.amount))}</p>
+              {deletingTransaction.description && <p className="text-xs text-gray-400">{deletingTransaction.description}</p>}
+            </div>
+          )}
+          <p className="text-sm text-gray-400">
+            Saldo akun akan dikembalikan otomatis.
+          </p>
+          <div className="flex gap-3 justify-end">
+            <button
+              onClick={() => setDeletingTransaction(null)}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded"
+            >
+              Batal
+            </button>
+            <button
+              onClick={confirmDeleteTransaction}
+              disabled={isDeletingTransaction}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white rounded"
+            >
+              {isDeletingTransaction ? 'Menghapus...' : 'Hapus'}
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </ClientLayout>
   )
 }

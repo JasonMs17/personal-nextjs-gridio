@@ -44,11 +44,15 @@ export async function GET(request: Request) {
     })
 
     const totalIncome = transactions
-      .filter((t: any) => t.type === 'income')
+      .filter((t: any) => t.type === 'income' && !t.exclude)
       .reduce((sum: number, t: any) => sum + Number(t.amount), 0)
 
     const totalExpense = transactions
-      .filter((t: any) => t.type === 'expense')
+      .filter((t: any) => t.type === 'expense' && !t.exclude)
+      .reduce((sum: number, t: any) => sum + Number(t.amount), 0)
+
+    const totalExcluded = transactions
+      .filter((t: any) => t.exclude && t.type === 'expense')
       .reduce((sum: number, t: any) => sum + Number(t.amount), 0)
 
     const payload = transactions.map((t: any) => ({
@@ -62,6 +66,7 @@ export async function GET(request: Request) {
       transactions: payload,
       totalIncome,
       totalExpense,
+      totalExcluded,
       net: totalIncome - totalExpense
     })
   } catch (error) {
@@ -77,7 +82,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { accountId, toAccountId, categoryId, type, amount, description, transactionDate } = body
+    const { accountId, toAccountId, categoryId, type, amount, description, transactionDate, exclude } = body
 
     if (!accountId || !type || amount === undefined) {
       return NextResponse.json(
@@ -133,7 +138,7 @@ export async function POST(request: Request) {
       )
     }
 
-    let updateOps: any[] = []
+    const isExcluded = typeof exclude === 'boolean' ? exclude : false
 
     if (type === 'transfer') {
       // Transfer: deduct from accountId, add to toAccountId
@@ -146,7 +151,8 @@ export async function POST(request: Request) {
             amount: numericAmount,
             description: description || null,
             transactionDate: date,
-            categoryId: null
+            categoryId: null,
+            exclude: isExcluded
           },
           include: {
             account: true,
@@ -186,7 +192,8 @@ export async function POST(request: Request) {
             type: type as TransactionType,
             amount: numericAmount,
             description: description || null,
-            transactionDate: date
+            transactionDate: date,
+            exclude: isExcluded
           },
           include: {
             account: true,

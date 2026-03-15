@@ -63,6 +63,7 @@ export interface BudgetTransaction {
   type: 'income' | 'expense' | 'transfer'
   amount: number
   description: string | null
+  exclude: boolean
   transactionDate: Date
   createdAt: Date
   updatedAt: Date
