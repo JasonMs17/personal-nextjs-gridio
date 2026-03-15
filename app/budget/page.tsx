@@ -594,7 +594,7 @@ export default function BudgetPage() {
 
               <button
                 type="submit"
-                disabled={isSubmitting || filteredCategories.length === 0 || accounts.length === 0}
+                disabled={isSubmitting || (form.type !== 'transfer' && filteredCategories.length === 0) || accounts.length === 0}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded font-semibold transition-colors"
               >
                 {isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}
