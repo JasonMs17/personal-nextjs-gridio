@@ -8,9 +8,11 @@ interface SidebarProps {
   workspaces: Workspace[]
   currentWorkspace: Workspace | null
   onWorkspaceChange: (workspaceId: string) => void
+  onNavigate?: () => void
+  isOpen?: boolean
 }
 
-export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChange }: SidebarProps) {
+export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChange, onNavigate, isOpen }: SidebarProps) {
   const pathname = usePathname()
 
   const navItems = [
@@ -23,7 +25,11 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
   ]
 
   return (
-    <div className="w-64 bg-gray-950 border-r border-gray-800 min-h-screen p-4">
+    <div
+      className={`fixed inset-y-0 left-0 z-30 w-72 bg-gray-950 border-r border-gray-800 p-4 transform transition-transform duration-200 lg:static lg:translate-x-0 lg:min-h-screen ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}
+    >
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4 text-white">📝 Grid Notes</h1>
         
@@ -65,6 +71,7 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
                   <Link
                     key={item.path}
                     href={item.path}
+                    onClick={onNavigate}
                     className={`block px-3 py-2 rounded transition-colors ${
                       isActive
                         ? 'bg-blue-600 text-white font-medium'
@@ -89,6 +96,7 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
         <div className="border-t border-gray-800 pt-4">
           <Link
             href="/workspaces"
+            onClick={onNavigate}
             className="block w-full px-4 py-3 bg-blue-600 text-white text-center rounded hover:bg-blue-700 transition-colors font-medium"
           >
             📁 Create Workspace

@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import ClientLayout from '@/components/ClientLayout'
 import DateNavigator from '@/components/DateNavigator'
 import Dialog from '@/components/Dialog'
+import MobileBudgetPage from '@/components/mobile/MobileBudgetPage'
 import { Account, BudgetCategory, BudgetTransaction } from '@/types'
+import { isNative } from '@/lib/platform'
 
 interface TransactionResponse {
   transactions: BudgetTransaction[]
@@ -15,6 +17,7 @@ interface TransactionResponse {
 }
 
 export default function BudgetPage() {
+  const [isNativeApp, setIsNativeApp] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<BudgetCategory[]>([])
   const [transactions, setTransactions] = useState<BudgetTransaction[]>([])
@@ -26,6 +29,12 @@ export default function BudgetPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSavingAccount, setIsSavingAccount] = useState(false)
   const [isSavingCategory, setIsSavingCategory] = useState(false)
+
+  // Quick input state
+  const [quickInputType, setQuickInputType] = useState<'income' | 'expense'>('expense')
+  const [quickInputText, setQuickInputText] = useState('')
+  const [quickInputError, setQuickInputError] = useState('')
+  const [isQuickSubmitting, setIsQuickSubmitting] = useState(false)
 
   const [form, setForm] = useState({
     type: 'expense' as 'income' | 'expense' | 'transfer',
@@ -98,6 +107,20 @@ export default function BudgetPage() {
     }
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    // Wait a bit for Capacitor to initialize before detecting platform
+    const timer = setTimeout(() => {
+      try {
+        setIsNativeApp(isNative())
+      } catch (error) {
+        console.error('Error detecting native app:', error)
+        setIsNativeApp(false)
+      }
+    }, 500) // Small delay to let Capacitor init
+    
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -419,6 +442,98 @@ export default function BudgetPage() {
     }
   }
 
+  const handleQuickSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setQuickInputError('')
+    
+    if (!quickInputText.trim()) {
+      setQuickInputError('Input tidak boleh kosong')
+      return
+    }
+
+    // Parse format: "account kategori angka"
+    const parts = quickInputText.trim().split(/\s+/)
+    if (parts.length < 3) {
+      setQuickInputError('Format: account kategori angka (contoh: BCA makanan 20000)')
+      return
+    }
+
+    const accountName = parts[0]
+    const categoryName = parts.slice(1, -1).join(' ')
+    const amountStr = parts[parts.length - 1]
+
+    // Validate amount
+    const amount = parseFloat(amountStr)
+    if (isNaN(amount) || amount <= 0) {
+      setQuickInputError('Angka transaksi tidak valid')
+      return
+    }
+
+    // Find account
+    const account = accounts.find((a) => a.name.toLowerCase() === accountName.toLowerCase())
+    if (!account) {
+      setQuickInputError(`Account "${accountName}" tidak ditemukan`)
+      return
+    }
+
+    // Find category
+    const category = categories.find(
+      (c) => c.name.toLowerCase() === categoryName.toLowerCase() && c.type === quickInputType
+    )
+    if (!category) {
+      setQuickInputError(`Kategori "${categoryName}" (${quickInputType}) tidak ditemukan`)
+      return
+    }
+
+    setIsQuickSubmitting(true)
+    try {
+      const res = await fetch('/api/budget/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountId: account.id,
+          categoryId: category.id,
+          type: quickInputType,
+          amount: amount,
+          description: '',
+          transactionDate: dateInputValue(currentDate),
+          exclude: false
+        })
+      })
+
+      if (res.ok) {
+        setQuickInputText('')
+        await Promise.all([fetchAccounts(), fetchTransactions(currentDate)])
+      } else {
+        const error = await res.json()
+        setQuickInputError(error.error || 'Gagal menyimpan transaksi')
+      }
+    } catch (error) {
+      console.error('Error creating quick transaction', error)
+      setQuickInputError('Terjadi kesalahan saat menyimpan transaksi')
+    } finally {
+      setIsQuickSubmitting(false)
+    }
+  }
+
+  // Mobile UI for native app
+  if (isNativeApp && !isLoading) {
+    return (
+      <MobileBudgetPage
+        accounts={accounts}
+        categories={categories}
+        transactions={transactions}
+        onTransactionCreate={async () => {
+          await Promise.all([fetchAccounts(), fetchTransactions(currentDate)])
+        }}
+        onRefresh={async () => {
+          await Promise.all([fetchAccounts(), fetchTransactions(currentDate)])
+        }}
+      />
+    )
+  }
+
+  // Web UI
   return (
     <ClientLayout>
       <div className="max-w-6xl mx-auto">
@@ -600,6 +715,51 @@ export default function BudgetPage() {
                 {isSubmitting ? 'Menyimpan...' : 'Simpan Transaksi'}
               </button>
             </form>
+
+            <div className="border-t border-gray-700 pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-white mb-3">⚡ Input Cepat</h3>
+              <p className="text-sm text-gray-400 mb-3">Format: <code className="bg-gray-800 px-2 py-1 rounded">account kategori angka</code></p>
+              <p className="text-xs text-gray-500 mb-4">Contoh: <code className="bg-gray-800 px-2 py-1 rounded">BCA makanan 20000</code></p>
+              
+              <form className="space-y-3" onSubmit={handleQuickSubmit}>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Tipe</label>
+                  <select
+                    value={quickInputType}
+                    onChange={(e) => setQuickInputType(e.target.value as 'income' | 'expense')}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+                  >
+                    <option value="income">💵 Income</option>
+                    <option value="expense">💸 Expense</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Input</label>
+                  <input
+                    type="text"
+                    value={quickInputText}
+                    onChange={(e) => {
+                      setQuickInputText(e.target.value)
+                      setQuickInputError('')
+                    }}
+                    placeholder="BCA makanan 20000"
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded"
+                  />
+                  {quickInputError && (
+                    <p className="text-xs text-red-400 mt-2">{quickInputError}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isQuickSubmitting || !quickInputText.trim()}
+                  className="w-full py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 text-white rounded font-semibold transition-colors text-sm"
+                >
+                  {isQuickSubmitting ? 'Menyimpan...' : 'Simpan Cepat'}
+                </button>
+              </form>
+            </div>
           </div>
 
           <div className="space-y-6">

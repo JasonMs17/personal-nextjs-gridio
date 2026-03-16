@@ -11,9 +11,16 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "cap:sync": "npx cap sync",
+    "cap:android": "npx cap open android",
+    "cap:build": "npm run build && npx cap sync",
+    "android:dev": "npm run cap:build && npm run cap:android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^7.6.0",
+    "@capacitor/core": "^8.2.0",
     "@headlessui/react": "^2.2.9",
     "next": "16.1.6",
     "react": "19.2.3",

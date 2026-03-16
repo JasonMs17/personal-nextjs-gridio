@@ -44,7 +44,8 @@ export default function DateNavigator({ currentDate, onDateChange }: DateNavigat
 
   return (
     <div className="bg-gray-900 rounded-lg shadow-lg p-4 mb-6 border border-gray-800">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <button
           onClick={handlePrev}
           className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors border border-gray-700"
@@ -70,10 +71,11 @@ export default function DateNavigator({ currentDate, onDateChange }: DateNavigat
           type="date"
           value={getInputValue()}
           onChange={handleDateSelect}
-          className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full sm:w-48 px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        </div>
 
-        <div className="px-4 py-2 bg-gray-800 border border-gray-700 rounded font-medium text-white">
+        <div className="px-4 py-2 bg-gray-800 border border-gray-700 rounded font-medium text-white w-full sm:w-auto flex items-center justify-between sm:justify-center gap-2">
           📅 {formatDate(currentDate)}
         </div>
       </div>

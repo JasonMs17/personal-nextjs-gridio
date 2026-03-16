@@ -8,6 +8,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     fetchWorkspaces()
@@ -68,15 +69,37 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex min-h-screen bg-black">
-      <Sidebar
-        workspaces={workspaces}
-        currentWorkspace={currentWorkspace}
-        onWorkspaceChange={handleWorkspaceChange}
-      />
-      <main className="flex-1 p-8 bg-gray-950">
-        {children}
-      </main>
+    <div className="min-h-screen bg-black">
+      {/* Mobile sidebar overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      <div className="flex min-h-screen">
+        <Sidebar
+          workspaces={workspaces}
+          currentWorkspace={currentWorkspace}
+          onWorkspaceChange={handleWorkspaceChange}
+          onNavigate={() => setIsSidebarOpen(false)}
+          isOpen={isSidebarOpen}
+        />
+
+        <main className="flex-1 bg-gray-950 p-4 sm:p-6 lg:p-8">
+          <div className="mb-4 flex items-center justify-between lg:hidden">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-gray-700"
+            >
+              ☰ Menu
+            </button>
+          </div>
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

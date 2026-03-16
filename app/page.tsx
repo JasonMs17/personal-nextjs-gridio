@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { GridItem } from '@/types'
 import GridCard from '@/components/GridCard'
@@ -11,6 +12,7 @@ export default function Home() {
   const [gridData, setGridData] = useState<GridItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [gridColumns, setGridColumns] = useState(3)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     // Load grid columns from localStorage
@@ -44,6 +46,13 @@ export default function Home() {
   useEffect(() => {
     fetchGridData()
   }, [currentDate])
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobile(window.innerWidth < 768)
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return () => window.removeEventListener('resize', updateViewport)
+  }, [])
 
   const fetchGridData = async () => {
     setIsLoading(true)
@@ -105,8 +114,21 @@ export default function Home() {
 
   return (
     <ClientLayout>
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-white">📊 Grid View</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white">📊 Grid View</h1>
+            <p className="text-sm text-gray-400 mt-1">Catat aktivitas harian dalam tampilan grid yang ringkas.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/budget"
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition-colors"
+            >
+              ⚡ Quick Budget
+            </Link>
+          </div>
+        </div>
 
         <DateNavigator currentDate={currentDate} onDateChange={setCurrentDate} />
 
@@ -128,9 +150,11 @@ export default function Home() {
           </div>
         ) : (
           <div
-            className="grid gap-6"
+            className="grid gap-4 sm:gap-6"
             style={{
-              gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`
+              gridTemplateColumns: isMobile
+                ? 'repeat(1, minmax(0, 1fr))'
+                : `repeat(${Math.max(1, gridColumns)}, minmax(280px, 1fr))`
             }}
           >
             {gridData.map((item) => (

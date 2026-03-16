@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">gridio</string>
+    <string name="title_activity_main">gridio</string>
+    <string name="package_name">com.ravination.gridio</string>
+    <string name="custom_url_scheme">com.ravination.gridio</string>
+</resources>
