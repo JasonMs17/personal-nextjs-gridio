@@ -21,6 +21,7 @@ export default function QuickTransactionInput({
 }: QuickTransactionInputProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense')
   const [input, setInput] = useState<string>('')
+  const [exclude, setExclude] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -105,7 +106,7 @@ export default function QuickTransactionInput({
           amount: parsed.amount,
           description: parsed.description,
           transactionDate: dateInputValue(currentDate),
-          exclude: false
+          exclude: exclude
         })
       })
 
@@ -193,6 +194,19 @@ export default function QuickTransactionInput({
             {loading || isSubmitting ? '...' : '→'}
           </button>
         </div>
+        
+        {/* Exclude Checkbox */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={exclude}
+            onChange={(e) => setExclude(e.target.checked)}
+            disabled={loading || isSubmitting}
+            className="w-3 h-3 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          />
+          <span className="text-xs text-gray-400">Exclude</span>
+        </label>
+        
         <p className="text-xs text-gray-500">Format: account category amount [detail]</p>
       </form>
     </div>
