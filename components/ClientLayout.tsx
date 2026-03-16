@@ -3,12 +3,17 @@
 import { useState, useEffect } from 'react'
 import { Workspace } from '@/types'
 import Sidebar from '@/components/Sidebar'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const router = useRouter()
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     fetchWorkspaces()
@@ -57,6 +62,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      localStorage.removeItem('currentWorkspaceId')
+      router.replace('/login')
+    } catch (error) {
+      console.error('Error signing out', error)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -73,7 +88,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -84,17 +99,33 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           currentWorkspace={currentWorkspace}
           onWorkspaceChange={handleWorkspaceChange}
           onNavigate={() => setIsSidebarOpen(false)}
+          onClose={() => setIsSidebarOpen(false)}
           isOpen={isSidebarOpen}
         />
 
         <main className="flex-1 bg-gray-950 p-4 sm:p-6 lg:p-8">
-          <div className="mb-4 flex items-center justify-between lg:hidden">
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className="inline-flex items-center justify-center rounded-lg bg-gray-800 px-3 py-2 text-white hover:bg-gray-700 transition"
+              >
+                ☰
+              </button>
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center rounded-lg bg-gray-800 px-3 py-2 text-xs font-medium text-white hover:bg-gray-700 transition"
+              >
+                Home
+              </Link>
+            </div>
             <button
               type="button"
-              onClick={() => setIsSidebarOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-2 text-sm font-semibold text-white shadow hover:bg-gray-700"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center rounded-lg bg-red-600/10 hover:bg-red-600/20 px-3 py-2 text-xs font-medium text-red-400 hover:text-red-300 transition border border-red-800/30"
             >
-              ☰ Menu
+              Logout
             </button>
           </div>
           {children}

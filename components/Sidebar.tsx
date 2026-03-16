@@ -3,17 +3,22 @@
 import { Workspace } from '@/types'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface SidebarProps {
   workspaces: Workspace[]
   currentWorkspace: Workspace | null
   onWorkspaceChange: (workspaceId: string) => void
   onNavigate?: () => void
+  onClose?: () => void
   isOpen?: boolean
 }
 
-export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChange, onNavigate, isOpen }: SidebarProps) {
+export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChange, onNavigate, onClose, isOpen }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClientComponentClient()
 
   const navItems = [
     { path: '/', label: '📊 Grid View' },
@@ -24,41 +29,58 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
     { path: '/workspaces', label: '📁 Workspaces' }
   ]
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      localStorage.removeItem('currentWorkspaceId')
+      router.replace('/login')
+    } catch (error) {
+      console.error('Error signing out', error)
+    }
+  }
+
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-30 w-72 bg-gray-950 border-r border-gray-800 p-4 transform transition-transform duration-200 lg:static lg:translate-x-0 lg:min-h-screen ${
-        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      className={`fixed inset-y-0 left-0 z-30 w-72 bg-gray-950 border-r border-gray-800 p-4 transform transition-transform duration-200 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-4 text-white">📝 Grid Notes</h1>
-        
-        {workspaces.length > 0 ? (
-          currentWorkspace && (
-            <div className="mb-4">
-              <label className="text-sm font-medium text-gray-300 mb-2 block">
-                Workspace
-              </label>
-              <select
-                value={currentWorkspace.id}
-                onChange={(e) => onWorkspaceChange(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {workspaces.map((ws) => (
-                  <option key={ws.id} value={ws.id}>
-                    {ws.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )
-        ) : (
-          <div className="mb-4 p-3 bg-gray-900 border border-gray-700 rounded text-sm">
-            <p className="text-blue-400 font-medium mb-1">👋 Welcome!</p>
-            <p className="text-gray-400 text-xs">Create your first workspace to get started</p>
-          </div>
-        )}
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">📝 Grid Notes</h1>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-white"
+        >
+          ✕
+        </button>
       </div>
+        
+      {workspaces.length > 0 ? (
+        currentWorkspace && (
+          <div className="mb-4">
+            <label className="text-sm font-medium text-gray-300 mb-2 block">
+              Workspace
+            </label>
+            <select
+              value={currentWorkspace.id}
+              onChange={(e) => onWorkspaceChange(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {workspaces.map((ws) => (
+                <option key={ws.id} value={ws.id}>
+                  {ws.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )
+      ) : (
+        <div className="mb-4 p-3 bg-gray-900 border border-gray-700 rounded text-sm">
+          <p className="text-blue-400 font-medium mb-1">👋 Welcome!</p>
+          <p className="text-gray-400 text-xs">Create your first workspace to get started</p>
+        </div>
+      )}
 
       {currentWorkspace ? (
         <>
@@ -91,6 +113,16 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
               📌 Categories: {currentWorkspace._count?.categories || 0}
             </p>
           </div>
+
+          <div className="border-t border-gray-800 pt-4 mt-4">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </>
       ) : (
         <div className="border-t border-gray-800 pt-4">
@@ -101,6 +133,15 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
           >
             📁 Create Workspace
           </Link>
+          <div className="border-t border-gray-800 pt-4 mt-4">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       )}
     </div>
