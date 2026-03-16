@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Account, BudgetCategory } from '@/types'
+import toast from 'react-hot-toast'
 
 interface QuickTransactionInputProps {
   accounts: Account[]
@@ -111,13 +112,18 @@ export default function QuickTransactionInput({
       if (res.ok) {
         setInput('')
         setError('')
+        toast.success(`Transaction added successfully!`)
         onTransactionAdded()
       } else {
-        setError('Failed to add transaction')
+        const errorMsg = 'Failed to add transaction'
+        setError(errorMsg)
+        toast.error(errorMsg)
       }
     } catch (err) {
       console.error('Error creating transaction', err)
-      setError('Error: failed to add transaction')
+      const errorMsg = 'Error: failed to add transaction'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -166,25 +172,28 @@ export default function QuickTransactionInput({
       </div>
 
       {/* Chat-like Input */}
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value)
-            setError('')
-          }}
-          placeholder={accounts.length > 0 ? `e.g ${accounts[0].name} ${filteredCategories[0]?.name || 'cat'} 50000` : 'account category amount'}
-          disabled={loading || isSubmitting}
-          className="flex-1 px-3 py-2 text-xs bg-gray-800 border border-gray-700 text-white rounded placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          disabled={loading || isSubmitting || !input.trim()}
-          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded font-medium text-xs transition"
-        >
-          {loading || isSubmitting ? '...' : '→'}
-        </button>
+      <form onSubmit={handleSubmit} className="space-y-1">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value)
+              setError('')
+            }}
+            placeholder={accounts.length > 0 ? `e.g ${accounts[0].name} ${filteredCategories[0]?.name || 'cat'} 50000 note` : 'account category amount detail'}
+            disabled={loading || isSubmitting}
+            className="flex-1 px-3 py-2 text-xs bg-gray-800 border border-gray-700 text-white rounded placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={loading || isSubmitting || !input.trim()}
+            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded font-medium text-xs transition"
+          >
+            {loading || isSubmitting ? '...' : '→'}
+          </button>
+        </div>
+        <p className="text-xs text-gray-500">Format: account category amount [detail]</p>
       </form>
     </div>
   )

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 import ClientLayout from '@/components/ClientLayout'
 import DateNavigator from '@/components/DateNavigator'
 import Dialog from '@/components/Dialog'
@@ -177,13 +178,22 @@ export default function BudgetPage() {
     e.preventDefault()
     
     // Validation
-    if (!form.accountId || !form.amount) return
+    if (!form.accountId || !form.amount) {
+      toast.error('Please fill in all required fields')
+      return
+    }
     
     // Type-specific validation
     if (form.type === 'transfer') {
-      if (!form.toAccountId) return
+      if (!form.toAccountId) {
+        toast.error('Please select destination account for transfer')
+        return
+      }
     } else {
-      if (!form.categoryId) return
+      if (!form.categoryId) {
+        toast.error('Please select a category')
+        return
+      }
     }
 
     setIsSubmitting(true)
@@ -210,11 +220,15 @@ export default function BudgetPage() {
       })
 
       if (res.ok) {
+        toast.success('Transaction added successfully!')
         setForm((prev) => ({ ...prev, amount: '', description: '', toAccountId: '', exclude: false }))
         await Promise.all([fetchAccounts(), fetchTransactions(currentDate)])
+      } else {
+        toast.error('Failed to create transaction')
       }
     } catch (error) {
       console.error('Error creating transaction', error)
+      toast.error('Error creating transaction')
     } finally {
       setIsSubmitting(false)
     }
@@ -224,7 +238,10 @@ export default function BudgetPage() {
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newAccount.name) return
+    if (!newAccount.name) {
+      toast.error('Account name is required')
+      return
+    }
     setIsSavingAccount(true)
     try {
       const res = await fetch('/api/budget/accounts', {
@@ -236,11 +253,15 @@ export default function BudgetPage() {
         })
       })
       if (res.ok) {
+        toast.success('Account created successfully!')
         setNewAccount({ name: '', initialBalance: '0' })
         await fetchAccounts()
+      } else {
+        toast.error('Failed to create account')
       }
     } catch (error) {
       console.error('Error creating account', error)
+      toast.error('Error creating account')
     } finally {
       setIsSavingAccount(false)
     }
@@ -248,7 +269,10 @@ export default function BudgetPage() {
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newCategory.name) return
+    if (!newCategory.name) {
+      toast.error('Category name is required')
+      return
+    }
     setIsSavingCategory(true)
     try {
       const res = await fetch('/api/budget/categories', {
@@ -257,11 +281,15 @@ export default function BudgetPage() {
         body: JSON.stringify(newCategory)
       })
       if (res.ok) {
+        toast.success('Category created successfully!')
         setNewCategory({ name: '', type: newCategory.type })
         await fetchCategories()
+      } else {
+        toast.error('Failed to create category')
       }
     } catch (error) {
       console.error('Error creating category', error)
+      toast.error('Error creating category')
     } finally {
       setIsSavingCategory(false)
     }
@@ -274,7 +302,10 @@ export default function BudgetPage() {
   }
 
   const handleSaveEditAccount = async () => {
-    if (!editingAccount || !editAccountName) return
+    if (!editingAccount || !editAccountName) {
+      toast.error('Account name is required')
+      return
+    }
     setIsEditingAccount(true)
     try {
       const res = await fetch(`/api/budget/accounts/${editingAccount.id}`, {
@@ -283,11 +314,15 @@ export default function BudgetPage() {
         body: JSON.stringify({ name: editAccountName })
       })
       if (res.ok) {
+        toast.success('Account updated successfully!')
         setEditingAccount(null)
         await fetchAccounts()
+      } else {
+        toast.error('Failed to update account')
       }
     } catch (error) {
       console.error('Error updating account', error)
+      toast.error('Error updating account')
     } finally {
       setIsEditingAccount(false)
     }
@@ -306,11 +341,15 @@ export default function BudgetPage() {
         method: 'DELETE'
       })
       if (res.ok) {
+        toast.success('Account deleted successfully!')
         setDeletingAccount(null)
         await fetchAccounts()
+      } else {
+        toast.error('Failed to delete account')
       }
     } catch (error) {
       console.error('Error deleting account', error)
+      toast.error('Error deleting account')
     } finally {
       setIsDeletingAccount(false)
     }
@@ -324,7 +363,10 @@ export default function BudgetPage() {
   }
 
   const handleSaveEditCategory = async () => {
-    if (!editingCategory || !editCategoryName) return
+    if (!editingCategory || !editCategoryName) {
+      toast.error('Category name is required')
+      return
+    }
     setIsEditingCategory(true)
     try {
       const res = await fetch(`/api/budget/categories/${editingCategory.id}`, {
@@ -336,11 +378,15 @@ export default function BudgetPage() {
         })
       })
       if (res.ok) {
+        toast.success('Category updated successfully!')
         setEditingCategory(null)
         await fetchCategories()
+      } else {
+        toast.error('Failed to update category')
       }
     } catch (error) {
       console.error('Error updating category', error)
+      toast.error('Error updating category')
     } finally {
       setIsEditingCategory(false)
     }
@@ -359,15 +405,19 @@ export default function BudgetPage() {
         method: 'DELETE'
       })
       if (res.ok) {
+        toast.success('Category deleted successfully!')
         setDeletingCategory(null)
         await fetchCategories()
         // Reset form if the deleted category was selected
         if (form.categoryId === deletingCategory.id) {
           setForm((prev) => ({ ...prev, categoryId: '' }))
         }
+      } else {
+        toast.error('Failed to delete category')
       }
     } catch (error) {
       console.error('Error deleting category', error)
+      toast.error('Error deleting category')
     } finally {
       setIsDeletingCategory(false)
     }
@@ -407,12 +457,16 @@ export default function BudgetPage() {
         })
       })
       if (res.ok) {
+        toast.success('Transaction updated successfully!')
         setEditingTransaction(null)
         await fetchTransactions(currentDate)
         await fetchAccounts()
+      } else {
+        toast.error('Failed to update transaction')
       }
     } catch (error) {
       console.error('Error updating transaction', error)
+      toast.error('Error updating transaction')
     } finally {
       setIsEditingTransaction(false)
     }
@@ -431,12 +485,16 @@ export default function BudgetPage() {
         method: 'DELETE'
       })
       if (res.ok) {
+        toast.success('Transaction deleted successfully!')
         setDeletingTransaction(null)
         await fetchTransactions(currentDate)
         await fetchAccounts()
+      } else {
+        toast.error('Failed to delete transaction')
       }
     } catch (error) {
       console.error('Error deleting transaction', error)
+      toast.error('Error deleting transaction')
     } finally {
       setIsDeletingTransaction(false)
     }

@@ -6,29 +6,45 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
-  const {
-    data: { session }
-  } = await supabase.auth.getSession()
+  try {
+    const {
+      data: { session },
+      error
+    } = await supabase.auth.getSession()
 
-  const pathname = req.nextUrl.pathname
-  const isAuthRoute = pathname.startsWith('/login')
+    // Stop retry loop - if error on getSession, don't retry
+    if (error) {
+      console.error('Session check error:', error.message)
+      // Continue without session to avoid infinite retry
+    }
 
-  // Redirect unauthenticated users to login
-  if (!session && !isAuthRoute) {
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = '/login'
-    redirectUrl.searchParams.set('redirectedFrom', pathname)
-    return NextResponse.redirect(redirectUrl)
+    const pathname = req.nextUrl.pathname
+    const isAuthRoute = pathname.startsWith('/login')
+
+    // Redirect unauthenticated users to login
+    if (!session && !isAuthRoute) {
+      const redirectUrl = req.nextUrl.clone()
+      redirectUrl.pathname = '/login'
+      redirectUrl.searchParams.set('redirectedFrom', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // Prevent logged-in users from visiting login
+    if (session && isAuthRoute) {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+
+    return res
+  } catch (error) {
+    console.error('Middleware error:', error)
+    // Return response to avoid infinite error loops
+    return res
   }
-
-  // Prevent logged-in users from visiting login
-  if (session && isAuthRoute) {
-    return NextResponse.redirect(new URL('/', req.url))
-  }
-
-  return res
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|public).*)']
+  matcher: [
+    // Match all paths except:
+    '/((?!api|_next/static|_next/image|favicon.ico|public|.well-known).*)',
+  ]
 }
