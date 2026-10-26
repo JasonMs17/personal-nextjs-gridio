@@ -54,6 +54,16 @@ model Entry {
   @@map("entries")
 }
 
+// Yjs state for realtime daily notes. Created by supabase/migrations/*_create_yjs_documents.sql
+// (RLS policies + triggers live there). Declared here so `prisma db push` doesn't drop it.
+model YjsDocument {
+  room      String   @id
+  state     String
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("yjs_documents")
+}
+
 // ===================== BUDGETING SYSTEM =====================
 // Sistem untuk tracking budget, accounts, dan transactions
 // ============================================================
