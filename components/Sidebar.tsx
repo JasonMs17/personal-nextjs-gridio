@@ -5,6 +5,18 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import {
+  CloseIcon,
+  FolderIcon,
+  GridIcon,
+  ListIcon,
+  Logo,
+  LogoutIcon,
+  PlusIcon,
+  SettingsIcon,
+  TagIcon,
+  WalletIcon
+} from '@/components/icons'
 
 interface SidebarProps {
   workspaces: Workspace[]
@@ -21,12 +33,12 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
   const supabase = createClientComponentClient()
 
   const navItems = [
-    { path: '/', label: '📊 Grid View' },
-    { path: '/list', label: '📋 List View' },
-    { path: '/categories', label: '🏷️ Categories' },
-    { path: '/budget', label: '💰 Budget' },
-    { path: '/settings', label: '⚙️ Settings' },
-    { path: '/workspaces', label: '📁 Workspaces' }
+    { path: '/', label: 'Overview', icon: GridIcon },
+    { path: '/list', label: 'List View', icon: ListIcon },
+    { path: '/categories', label: 'Categories', icon: TagIcon },
+    { path: '/budget', label: 'Budget', icon: WalletIcon },
+    { path: '/settings', label: 'Settings', icon: SettingsIcon },
+    { path: '/workspaces', label: 'Workspaces', icon: FolderIcon }
   ]
 
   const handleLogout = async () => {
@@ -40,110 +52,110 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
   }
 
   return (
-    <div
-      className={`fixed inset-y-0 left-0 z-30 w-72 bg-gray-950 border-r border-gray-800 p-4 transform transition-transform duration-200 ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
+    <aside
+      className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-slate-200/70 bg-white px-4 py-6 transform transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 ${
+        isOpen ? 'translate-x-0 shadow-2xl lg:shadow-none' : '-translate-x-full'
       }`}
     >
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">📝 Grid Notes</h1>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-white"
-        >
-          ✕
+      <div className="mb-8 flex items-center justify-between px-2">
+        <Logo />
+        <button type="button" onClick={onClose} className="icon-btn lg:hidden" aria-label="Close sidebar">
+          <CloseIcon />
         </button>
       </div>
-        
-      {workspaces.length > 0 ? (
-        currentWorkspace && (
-          <div className="mb-4">
-            <label className="text-sm font-medium text-gray-300 mb-2 block">
-              Workspace
-            </label>
-            <select
-              value={currentWorkspace.id}
-              onChange={(e) => onWorkspaceChange(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-900 border border-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {workspaces.map((ws) => (
-                <option key={ws.id} value={ws.id}>
-                  {ws.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )
-      ) : (
-        <div className="mb-4 p-3 bg-gray-900 border border-gray-700 rounded text-sm">
-          <p className="text-blue-400 font-medium mb-1">👋 Welcome!</p>
-          <p className="text-gray-400 text-xs">Create your first workspace to get started</p>
-        </div>
-      )}
 
-      {currentWorkspace ? (
-        <>
-          <div className="border-t border-gray-800 pt-4 mb-4">
-            <h2 className="text-sm font-semibold text-gray-400 mb-3">Navigation</h2>
+      <div className="flex-1 overflow-y-auto">
+        {currentWorkspace ? (
+          <>
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const isActive = pathname === item.path
+                const Icon = item.icon
                 return (
                   <Link
                     key={item.path}
                     href={item.path}
                     onClick={onNavigate}
-                    className={`block px-3 py-2 rounded transition-colors ${
+                    className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-blue-600 text-white font-medium'
-                        : 'text-gray-300 hover:bg-gray-800'
+                        ? 'bg-brand-50 text-brand-700'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
+                    <Icon className={isActive ? 'text-brand-500' : 'text-slate-400 group-hover:text-slate-600'} />
                     {item.label}
                   </Link>
                 )
               })}
             </nav>
-          </div>
 
-          <div className="border-t border-gray-800 pt-4">
-            <h3 className="text-sm font-semibold text-gray-400 mb-2">Quick Stats</h3>
-            <p className="text-sm text-gray-300">
-              📌 Categories: {currentWorkspace._count?.categories || 0}
-            </p>
+            <div className="mt-8">
+              <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                Workspaces
+              </p>
+              <div className="space-y-0.5">
+                {workspaces.map((ws) => {
+                  const isActive = ws.id === currentWorkspace.id
+                  return (
+                    <button
+                      key={ws.id}
+                      type="button"
+                      onClick={() => onWorkspaceChange(ws.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                        isActive ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span
+                        className={`grid h-6 w-6 shrink-0 place-items-center rounded-md text-[11px] font-bold ${
+                          isActive ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {ws.name.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="flex-1 truncate font-medium">{ws.name}</span>
+                      <span className={`text-xs ${isActive ? 'text-brand-600' : 'text-slate-400'}`}>
+                        {ws._count?.categories || 0}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-2xl border border-brand-100 bg-brand-50 p-4">
+            <p className="text-sm font-semibold text-brand-700">Welcome to Gridio</p>
+            <p className="mt-1 text-xs text-brand-700/80">Create your first workspace to get started.</p>
+            <Link
+              href="/workspaces"
+              onClick={onNavigate}
+              className="btn-primary mt-4 w-full"
+            >
+              <PlusIcon width={16} height={16} />
+              Create Workspace
+            </Link>
           </div>
+        )}
+      </div>
 
-          <div className="border-t border-gray-800 pt-4 mt-4">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="border-t border-gray-800 pt-4">
-          <Link
-            href="/workspaces"
-            onClick={onNavigate}
-            className="block w-full px-4 py-3 bg-blue-600 text-white text-center rounded hover:bg-blue-700 transition-colors font-medium"
-          >
-            📁 Create Workspace
-          </Link>
-          <div className="border-t border-gray-800 pt-4 mt-4">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+        <Link
+          href="/workspaces"
+          onClick={onNavigate}
+          className="grid h-11 w-11 place-items-center rounded-full bg-brand-500 text-white shadow-float transition hover:bg-brand-600"
+          aria-label="Manage workspaces"
+        >
+          <PlusIcon width={20} height={20} strokeWidth={2.2} />
+        </Link>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+        >
+          <LogoutIcon width={16} height={16} />
+          Logout
+        </button>
+      </div>
+    </aside>
   )
 }

@@ -13,7 +13,7 @@ interface DialogProps {
 export default function CustomDialog({ isOpen, onClose, title, children }: DialogProps) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-10" onClose={onClose}>
+      <Dialog as="div" className="relative z-40" onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -23,7 +23,7 @@ export default function CustomDialog({ isOpen, onClose, title, children }: Dialo
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-50" />
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -37,8 +37,8 @@ export default function CustomDialog({ isOpen, onClose, title, children }: Dialo
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform rounded-lg bg-gray-900 border border-gray-800 p-6 shadow-lg transition-all">
-                <Dialog.Title className="text-xl font-semibold text-white mb-4">
+              <Dialog.Panel className="w-full max-w-md transform rounded-2xl border border-slate-200/70 bg-white p-6 shadow-2xl transition-all">
+                <Dialog.Title className="mb-5 text-lg font-bold tracking-tight text-slate-900">
                   {title}
                 </Dialog.Title>
                 <div>{children}</div>

@@ -1,5 +1,7 @@
 'use client'
 
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/icons'
+
 interface DateNavigatorProps {
   currentDate: Date
   onDateChange: (date: Date) => void
@@ -43,37 +45,47 @@ export default function DateNavigator({ currentDate, onDateChange }: DateNavigat
   }
 
   return (
-    <div className="bg-gray-900 rounded border border-gray-800 p-3 mb-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <button
-          onClick={handlePrev}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded transition"
-        >
-          ← Prev
-        </button>
-        
-        <button
-          onClick={handleToday}
-          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded transition"
-        >
-          Today
-        </button>
-        
-        <button
-          onClick={handleNext}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs rounded transition"
-        >
-          Next →
-        </button>
+    <div className="card mb-6 flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-2 sm:pl-4">
+      <div className="flex items-center gap-3">
+        <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-50 text-brand-500">
+          <CalendarIcon width={18} height={18} />
+        </div>
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Selected date</p>
+          <p className="text-sm font-semibold text-slate-900">{formatDate(currentDate)}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center rounded-xl border border-slate-200 bg-white p-0.5 shadow-xs">
+          <button
+            onClick={handlePrev}
+            className="icon-btn"
+            aria-label="Previous day"
+          >
+            <ChevronLeftIcon />
+          </button>
+          <button
+            onClick={handleToday}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-brand-600 transition hover:bg-brand-50"
+          >
+            Today
+          </button>
+          <button
+            onClick={handleNext}
+            className="icon-btn"
+            aria-label="Next day"
+          >
+            <ChevronRightIcon />
+          </button>
+        </div>
 
         <input
           type="date"
           value={getInputValue()}
           onChange={handleDateSelect}
-          className="w-full sm:w-40 px-3 py-1.5 bg-gray-800 border border-gray-700 text-xs text-white rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="input w-full py-2 text-xs sm:w-40"
         />
-        </div>
       </div>
     </div>
   )

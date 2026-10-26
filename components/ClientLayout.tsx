@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Workspace } from '@/types'
 import Sidebar from '@/components/Sidebar'
 import Link from 'next/link'
+import { HomeIcon, Logo, LogoutIcon, MenuIcon } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
@@ -74,21 +75,23 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center">
-          <div className="text-4xl mb-4">📝</div>
-          <div className="text-gray-400">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Logo />
+          <div className="h-1 w-32 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-brand-500" />
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-20 bg-slate-900/30 backdrop-blur-sm lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -103,29 +106,38 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           isOpen={isSidebarOpen}
         />
 
-        <main className="flex-1 bg-gray-950 p-4 sm:p-6 lg:p-8">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="inline-flex items-center justify-center rounded-lg bg-gray-800 px-3 py-2 text-white hover:bg-gray-700 transition"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:bg-slate-50 lg:hidden"
+                aria-label="Open menu"
               >
-                ☰
+                <MenuIcon />
               </button>
               <Link
                 href="/"
-                className="inline-flex items-center justify-center rounded-lg bg-gray-800 px-3 py-2 text-xs font-medium text-white hover:bg-gray-700 transition"
+                className="inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-slate-900"
               >
-                Home
+                <HomeIcon width={16} height={16} />
+                <span className="hidden sm:inline">Home</span>
               </Link>
+              {currentWorkspace && (
+                <>
+                  <span className="text-slate-300">/</span>
+                  <span className="truncate text-sm font-semibold text-slate-900">{currentWorkspace.name}</span>
+                </>
+              )}
             </div>
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex items-center justify-center rounded-lg bg-red-600/10 hover:bg-red-600/20 px-3 py-2 text-xs font-medium text-red-400 hover:text-red-300 transition border border-red-800/30"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 shadow-xs transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
             >
-              Logout
+              <LogoutIcon width={16} height={16} />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
           {children}
