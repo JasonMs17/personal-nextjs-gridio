@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Account, BudgetCategory, BudgetTransaction } from '@/types'
+import { SendIcon, WalletIcon } from '@/components/icons'
 
 interface Message {
   id: string
@@ -30,7 +31,7 @@ export default function MobileBudgetPage({
     {
       id: '0',
       type: 'system',
-      content: '👋 Halo! Silakan input transaksi dengan format: account kategori angka\nContoh: BCA makanan 20000',
+      content: '👋 Hi! Add a transaction using the format: account category amount\nExample: BCA food 20000',
       timestamp: new Date()
     }
   ])
@@ -71,13 +72,13 @@ export default function MobileBudgetPage({
     setIsLoading(true)
 
     try {
-      // Parse format: "account kategori angka"
+      // Parse format: "account category amount"
       const parts = userInput.split(/\s+/)
 
       if (parts.length < 3) {
         addMessage({
           type: 'error',
-          content: '❌ Format salah. Gunakan: account kategori angka\nContoh: BCA makanan 20000'
+          content: '❌ Invalid format. Use: account category amount\nExample: BCA food 20000'
         })
         return
       }
@@ -91,7 +92,7 @@ export default function MobileBudgetPage({
       if (isNaN(amount) || amount <= 0) {
         addMessage({
           type: 'error',
-          content: '❌ Angka tidak valid. Harus lebih dari 0'
+          content: '❌ Invalid amount. It must be greater than 0'
         })
         return
       }
@@ -101,7 +102,7 @@ export default function MobileBudgetPage({
       if (!account) {
         addMessage({
           type: 'error',
-          content: `❌ Account "${accountName}" tidak ditemukan. Akun tersedia: ${accounts.map((a) => a.name).join(', ')}`
+          content: `❌ Account "${accountName}" not found. Available accounts: ${accounts.map((a) => a.name).join(', ')}`
         })
         return
       }
@@ -117,7 +118,7 @@ export default function MobileBudgetPage({
           .join(', ')
         addMessage({
           type: 'error',
-          content: `❌ Kategori "${categoryName}" (${transactionType}) tidak ditemukan.\nKategori tersedia: ${availableCategories || 'Belum ada kategori'}`
+          content: `❌ Category "${categoryName}" (${transactionType}) not found.\nAvailable categories: ${availableCategories || 'No categories yet'}`
         })
         return
       }
@@ -141,7 +142,7 @@ export default function MobileBudgetPage({
         const transaction = await res.json()
         addMessage({
           type: 'success',
-          content: `✅ Transaksi berhasil!\n${transactionType === 'income' ? '💵' : '💸'} ${category.name} - ${formatCurrency(amount)}\nAkun: ${account.name}`,
+          content: `✅ Transaction saved!\n${transactionType === 'income' ? '💵' : '💸'} ${category.name} - ${formatCurrency(amount)}\nAccount: ${account.name}`,
           transaction
         })
         await onRefresh()
@@ -149,14 +150,14 @@ export default function MobileBudgetPage({
         const error = await res.json()
         addMessage({
           type: 'error',
-          content: `❌ Gagal menyimpan: ${error.error || 'Error tidak diketahui'}`
+          content: `❌ Failed to save: ${error.error || 'Unknown error'}`
         })
       }
     } catch (error) {
       console.error('Error:', error)
       addMessage({
         type: 'error',
-        content: '❌ Terjadi kesalahan saat memproses input'
+        content: '❌ Something went wrong while processing your input'
       })
     } finally {
       setIsLoading(false)
@@ -177,43 +178,48 @@ export default function MobileBudgetPage({
   const net = totalIncome - totalExpense
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-white">
+    <div className="flex h-screen flex-col bg-background text-slate-900">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-4 shadow-lg">
-        <h1 className="text-xl font-bold mb-3">💰 Budget</h1>
-        
+      <div className="rounded-b-3xl bg-brand-500 px-4 pt-5 pb-4 text-white shadow-float">
+        <div className="mb-4 flex items-center gap-2.5">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/20">
+            <WalletIcon width={18} height={18} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">Budget</h1>
+        </div>
+
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="bg-blue-800 bg-opacity-50 p-2 rounded">
-            <p className="text-gray-300">Income</p>
-            <p className="font-semibold">{formatCurrency(totalIncome)}</p>
+          <div className="rounded-xl bg-white/15 p-2.5">
+            <p className="text-white/75">Income</p>
+            <p className="truncate font-semibold">{formatCurrency(totalIncome)}</p>
           </div>
-          <div className="bg-red-800 bg-opacity-50 p-2 rounded">
-            <p className="text-gray-300">Expense</p>
-            <p className="font-semibold">{formatCurrency(totalExpense)}</p>
+          <div className="rounded-xl bg-white/15 p-2.5">
+            <p className="text-white/75">Expense</p>
+            <p className="truncate font-semibold">{formatCurrency(totalExpense)}</p>
           </div>
-          <div className={`${net >= 0 ? 'bg-green-800' : 'bg-red-800'} bg-opacity-50 p-2 rounded`}>
-            <p className="text-gray-300">Net</p>
-            <p className="font-semibold">{formatCurrency(net)}</p>
+          <div className={`rounded-xl p-2.5 ${net >= 0 ? 'bg-white text-brand-700' : 'bg-rose-500 text-white'}`}>
+            <p className={net >= 0 ? 'text-brand-600/80' : 'text-white/80'}>Net</p>
+            <p className="truncate font-semibold">{formatCurrency(net)}</p>
           </div>
         </div>
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((msg) => (
           <div
             key={msg.id}
             className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-xs px-4 py-2 rounded-lg whitespace-pre-wrap break-words text-sm ${
+              className={`max-w-xs whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm ${
                 msg.type === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-none'
+                  ? 'rounded-br-md bg-brand-500 text-white'
                   : msg.type === 'success'
-                    ? 'bg-green-900 text-green-100 rounded-bl-none'
+                    ? 'rounded-bl-md border border-brand-100 bg-brand-50 text-brand-800'
                     : msg.type === 'error'
-                      ? 'bg-red-900 text-red-100 rounded-bl-none'
-                      : 'bg-gray-800 text-gray-100 rounded-bl-none'
+                      ? 'rounded-bl-md border border-rose-100 bg-rose-50 text-rose-700'
+                      : 'rounded-bl-md border border-slate-200/70 bg-white text-slate-700 shadow-card'
               }`}
             >
               {msg.content}
@@ -224,27 +230,19 @@ export default function MobileBudgetPage({
       </div>
 
       {/* Transaction Type Selector */}
-      <div className="border-t border-gray-800 p-3">
-        <div className="flex gap-2 mb-3">
+      <div className="border-t border-slate-200/70 bg-white p-3">
+        <div className="segmented mb-3">
           <button
             onClick={() => setTransactionType('expense')}
-            className={`flex-1 py-2 rounded font-semibold text-sm transition-colors ${
-              transactionType === 'expense'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
+            className={`segmented-item py-2 text-sm ${transactionType === 'expense' ? 'segmented-item-active text-rose-600' : ''}`}
           >
-            💸 Expense
+            Expense
           </button>
           <button
             onClick={() => setTransactionType('income')}
-            className={`flex-1 py-2 rounded font-semibold text-sm transition-colors ${
-              transactionType === 'income'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
+            className={`segmented-item py-2 text-sm ${transactionType === 'income' ? 'segmented-item-active text-brand-600' : ''}`}
           >
-            💵 Income
+            Income
           </button>
         </div>
 
@@ -259,16 +257,17 @@ export default function MobileBudgetPage({
                 handleSend()
               }
             }}
-            placeholder={`${transactionType === 'expense' ? 'BCA makanan 20000' : 'BCA gaji 1000000'}`}
+            placeholder={`${transactionType === 'expense' ? 'BCA food 20000' : 'BCA salary 1000000'}`}
             disabled={isLoading}
-            className="flex-1 bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50"
+            className="input flex-1"
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white px-4 py-2 rounded font-semibold transition-colors disabled:cursor-not-allowed"
+            className="btn-primary px-3.5"
+            aria-label="Send"
           >
-            {isLoading ? '...' : '→'}
+            {isLoading ? '...' : <SendIcon width={18} height={18} />}
           </button>
         </div>
       </div>

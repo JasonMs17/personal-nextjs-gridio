@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Category } from '@/types'
 import ClientLayout from '@/components/ClientLayout'
+import { CloseIcon, FolderIcon, PlusIcon, TagIcon, TrashIcon } from '@/components/icons'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -114,7 +115,7 @@ export default function CategoriesPage() {
   if (isLoading) {
     return (
       <ClientLayout>
-        <div className="text-center py-12 text-gray-400">Loading categories...</div>
+        <div className="py-12 text-center text-sm text-slate-400">Loading categories...</div>
       </ClientLayout>
     )
   }
@@ -125,13 +126,15 @@ export default function CategoriesPage() {
     console.log('⚠️ Categories - No workspace ID, showing warning')
     return (
       <ClientLayout>
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📁</div>
-          <h2 className="text-xl font-semibold mb-2 text-white">No workspace selected</h2>
-          <p className="text-gray-400 mb-4">Please select or create a workspace first</p>
+        <div className="card mx-auto flex max-w-lg flex-col items-center px-6 py-14 text-center">
+          <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-500">
+            <FolderIcon width={24} height={24} />
+          </div>
+          <h2 className="mb-1 text-lg font-semibold text-slate-900">No workspace selected</h2>
+          <p className="mb-5 text-sm text-slate-500">Please select or create a workspace first</p>
           <a
             href="/workspaces"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="btn-primary"
           >
             Go to Workspaces
           </a>
@@ -142,56 +145,60 @@ export default function CategoriesPage() {
 
   return (
     <ClientLayout>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-white">🏷️ Categories</h1>
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="page-title">Categories</h1>
+            <p className="page-subtitle">Each category becomes a card in your daily grid.</p>
+          </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className={showForm ? 'btn-secondary' : 'btn-primary'}
           >
-            {showForm ? 'Cancel' : '➕ New Category'}
+            {showForm ? <CloseIcon width={16} height={16} /> : <PlusIcon width={16} height={16} />}
+            {showForm ? 'Cancel' : 'New Category'}
           </button>
         </div>
 
         {showForm && (
-          <div className="bg-gray-900 rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
-            <h2 className="text-xl font-semibold mb-4 text-white">Create New Category</h2>
+          <div className="card mb-6 p-6">
+            <h2 className="mb-5 text-base font-semibold text-slate-900">Create New Category</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Name *</label>
+                <label className="label">Name *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Progress"
                   required
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">Icon</label>
+                  <label className="label">Icon</label>
                   <input
                     type="text"
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     maxLength={2}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-2xl"
+                    className="input py-2 text-center text-2xl"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">Color</label>
+                  <label className="label">Color</label>
                   <input
                     type="color"
                     value={formData.color}
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    className="w-full h-11 border border-gray-700 rounded cursor-pointer bg-gray-800"
+                    className="h-[50px] w-full cursor-pointer rounded-xl border border-slate-200 bg-white"
                   />
                 </div>
               </div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
+                className="btn-primary w-full"
               >
                 Create Category
               </button>
@@ -200,39 +207,45 @@ export default function CategoriesPage() {
         )}
 
         {isLoading ? (
-          <div className="text-center py-12 text-gray-400">Loading...</div>
+          <div className="py-12 text-center text-sm text-slate-400">Loading...</div>
         ) : categories.length === 0 ? (
-          <div className="text-center py-12 bg-gray-900 rounded-lg shadow-lg border border-gray-800">
-            <div className="text-6xl mb-4">🏷️</div>
-            <h2 className="text-xl font-semibold mb-2 text-white">No categories yet</h2>
-            <p className="text-gray-400">Create your first category to start taking notes</p>
+          <div className="card flex flex-col items-center px-6 py-14 text-center">
+            <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-500">
+              <TagIcon width={24} height={24} />
+            </div>
+            <h2 className="mb-1 text-lg font-semibold text-slate-900">No categories yet</h2>
+            <p className="text-sm text-slate-500">Create your first category to start taking notes</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="bg-gray-900 rounded-lg shadow-lg p-6 border-l-4 border-gray-800"
-                style={{ borderLeftColor: cat.color }}
+                className="card relative overflow-hidden p-5"
               >
-                <div className="flex items-start justify-between">
+                <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: cat.color }} />
+                <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{cat.icon}</span>
+                    <span
+                      className="grid h-12 w-12 place-items-center rounded-full text-2xl"
+                      style={{ backgroundColor: `${cat.color}1f` }}
+                    >
+                      {cat.icon}
+                    </span>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{cat.name}</h3>
-                      <div
-                        className="inline-block px-2 py-1 rounded text-xs text-white mt-1"
-                        style={{ backgroundColor: cat.color }}
-                      >
+                      <h3 className="text-base font-semibold text-slate-900">{cat.name}</h3>
+                      <div className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium uppercase text-slate-400">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
                         {cat.color}
                       </div>
                     </div>
                   </div>
                   <button
                     onClick={() => handleDelete(cat.id)}
-                    className="px-3 py-1 text-red-400 hover:bg-gray-800 rounded transition-colors"
+                    className="icon-btn-danger"
+                    aria-label="Delete category"
                   >
-                    🗑️
+                    <TrashIcon width={16} height={16} />
                   </button>
                 </div>
               </div>

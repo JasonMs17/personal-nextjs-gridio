@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Workspace } from '@/types'
 import ClientLayout from '@/components/ClientLayout'
 import Dialog from '@/components/Dialog'
+import { CloseIcon, FolderIcon, PencilIcon, PlusIcon, TagIcon, TrashIcon } from '@/components/icons'
 
 export default function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
@@ -104,45 +105,49 @@ export default function WorkspacesPage() {
 
   return (
     <ClientLayout>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-white">📁 Workspaces</h1>
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="page-title">Workspaces</h1>
+            <p className="page-subtitle">Separate your notes into focused spaces.</p>
+          </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className={showForm ? 'btn-secondary' : 'btn-primary'}
           >
-            {showForm ? 'Cancel' : '➕ New Workspace'}
+            {showForm ? <CloseIcon width={16} height={16} /> : <PlusIcon width={16} height={16} />}
+            {showForm ? 'Cancel' : 'New Workspace'}
           </button>
         </div>
 
         {showForm && (
-          <div className="bg-gray-900 rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
-            <h2 className="text-xl font-semibold mb-4 text-white">Create New Workspace</h2>
+          <div className="card mb-6 p-6">
+            <h2 className="mb-5 text-base font-semibold text-slate-900">Create New Workspace</h2>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Name *</label>
+                <label className="label">Name *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Skripsi"
                   required
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-gray-300">Description</label>
+                <label className="label">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Optional..."
                   rows={3}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="input resize-none"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
+                className="btn-primary w-full"
               >
                 Create Workspace
               </button>
@@ -151,41 +156,51 @@ export default function WorkspacesPage() {
         )}
 
         {isLoading ? (
-          <div className="text-center py-12 text-gray-400">Loading...</div>
+          <div className="py-12 text-center text-sm text-slate-400">Loading...</div>
         ) : workspaces.length === 0 ? (
-          <div className="text-center py-12 bg-gray-900 rounded-lg shadow-lg border border-gray-800">
-            <div className="text-6xl mb-4">📁</div>
-            <h2 className="text-xl font-semibold mb-2 text-white">No workspaces yet</h2>
-            <p className="text-gray-400">Create your first workspace to get started</p>
+          <div className="card flex flex-col items-center px-6 py-14 text-center">
+            <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-500">
+              <FolderIcon width={24} height={24} />
+            </div>
+            <h2 className="mb-1 text-lg font-semibold text-slate-900">No workspaces yet</h2>
+            <p className="text-sm text-slate-500">Create your first workspace to get started</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {workspaces.map((ws) => (
-              <div key={ws.id} className="bg-gray-900 rounded-lg shadow-lg p-6 border border-gray-800">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2 text-white">{ws.name}</h3>
-                    {ws.description && (
-                      <p className="text-gray-400 mb-2">{ws.description}</p>
-                    )}
-                    <p className="text-sm text-gray-500">
-                      📌 {ws._count?.categories || 0} categories
-                    </p>
+              <div key={ws.id} className="card flex flex-col p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-base font-bold text-brand-600">
+                      {ws.name.charAt(0).toUpperCase()}
+                    </span>
+                    <h3 className="truncate text-base font-semibold text-slate-900">{ws.name}</h3>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex shrink-0 gap-1">
                     <button
                       onClick={() => handleEdit(ws)}
-                      className="px-3 py-1 text-blue-400 hover:bg-gray-800 rounded transition-colors"
+                      className="icon-btn"
+                      aria-label="Edit workspace"
                     >
-                      ✏️ Edit
+                      <PencilIcon width={15} height={15} />
                     </button>
                     <button
                       onClick={() => handleDelete(ws.id)}
-                      className="px-3 py-1 text-red-400 hover:bg-gray-800 rounded transition-colors"
+                      className="icon-btn-danger"
+                      aria-label="Delete workspace"
                     >
-                      🗑️ Delete
+                      <TrashIcon width={15} height={15} />
                     </button>
                   </div>
+                </div>
+                {ws.description && (
+                  <p className="mt-3 text-sm text-slate-500">{ws.description}</p>
+                )}
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                    <TagIcon width={13} height={13} />
+                    {ws._count?.categories || 0} categories
+                  </span>
                 </div>
               </div>
             ))}
@@ -200,39 +215,39 @@ export default function WorkspacesPage() {
       >
         <form onSubmit={handleUpdateWorkspace} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-300">Name *</label>
+            <label className="label">Name *</label>
             <input
               type="text"
               value={editFormData.name}
               onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
               placeholder="Workspace name"
               required
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-300">Description</label>
+            <label className="label">Description</label>
             <textarea
               value={editFormData.description}
               onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
               placeholder="Optional..."
               rows={3}
-              className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input resize-none"
             />
           </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
-            >
-              Save Changes
-            </button>
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={() => setEditingWorkspace(null)}
-              className="flex-1 bg-gray-800 text-gray-300 py-2 rounded hover:bg-gray-700 transition-colors"
+              className="btn-secondary flex-1"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+            >
+              Save Changes
             </button>
           </div>
         </form>

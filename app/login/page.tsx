@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Logo } from '@/components/icons'
 
 function LoginContent() {
   const supabase = createClientComponentClient()
@@ -22,7 +23,7 @@ function LoginContent() {
 
     try {
       if (!email || !password) {
-        setError('Email dan password wajib diisi.')
+        setError('Email and password are required.')
         return
       }
 
@@ -31,55 +32,68 @@ function LoginContent() {
 
       router.replace(redirectTo)
     } catch (err: any) {
-      setError(err.message || 'Gagal memproses permintaan')
+      setError(err.message || 'Unable to process your request')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-black text-gray-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl shadow-xl p-6 space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Masuk</h1>
-          <p className="text-sm text-gray-400">Gunakan email & password Supabase kamu.</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+      <div className="pointer-events-none absolute -top-40 -right-40 h-[28rem] w-[28rem] rounded-full bg-brand-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-indigo-200/40 blur-3xl" />
+
+      <div className="relative w-full max-w-md">
+        <div className="mb-8 flex justify-center">
+          <Logo />
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-300">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-              required
-            />
+        <div className="card space-y-6 p-8 shadow-xl shadow-slate-200/60">
+          <div className="space-y-1.5 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sign in</h1>
+            <p className="text-sm text-slate-500">Use your Supabase email and password.</p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm text-gray-300">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
-          </div>
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+            <div>
+              <label className="label">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+                placeholder="••••••••"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors text-white font-semibold py-2 disabled:opacity-60"
-          >
-            {isLoading ? 'Memproses...' : 'Masuk'}
-          </button>
-        </form>
+            {error && (
+              <p className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary w-full py-3"
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </form>
+        </div>
+
+        <p className="mt-6 text-center text-xs text-slate-400">© Gridio · Notes & Budget</p>
       </div>
     </div>
   )
@@ -87,7 +101,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-gray-400">Loading...</div></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><div className="text-sm text-slate-400">Loading...</div></div>}>
       <LoginContent />
     </Suspense>
   )

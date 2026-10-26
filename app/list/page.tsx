@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Category, Entry } from '@/types'
 import ClientLayout from '@/components/ClientLayout'
+import { CalendarIcon, FolderIcon, NoteIcon, TagIcon, TrashIcon } from '@/components/icons'
 
 export default function ListPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -112,7 +113,7 @@ export default function ListPage() {
   if (isLoading) {
     return (
       <ClientLayout>
-        <div className="text-center py-12 text-gray-400">Loading...</div>
+        <div className="py-12 text-center text-sm text-slate-400">Loading...</div>
       </ClientLayout>
     )
   }
@@ -120,13 +121,15 @@ export default function ListPage() {
   if (!workspaceId) {
     return (
       <ClientLayout>
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📁</div>
-          <h2 className="text-xl font-semibold mb-2 text-white">No workspace selected</h2>
-          <p className="text-gray-400 mb-4">Please select or create a workspace first</p>
+        <div className="card mx-auto flex max-w-lg flex-col items-center px-6 py-14 text-center">
+          <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-500">
+            <FolderIcon width={24} height={24} />
+          </div>
+          <h2 className="mb-1 text-lg font-semibold text-slate-900">No workspace selected</h2>
+          <p className="mb-5 text-sm text-slate-500">Please select or create a workspace first</p>
           <a
             href="/workspaces"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            className="btn-primary"
           >
             Go to Workspaces
           </a>
@@ -137,72 +140,89 @@ export default function ListPage() {
 
   return (
     <ClientLayout>
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-white">📋 List View</h1>
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6">
+          <h1 className="page-title">List View</h1>
+          <p className="page-subtitle">Browse every note you have written, per category.</p>
+        </div>
 
         {isLoading ? (
-          <div className="text-center py-12 text-gray-400">Loading...</div>
+          <div className="py-12 text-center text-sm text-slate-400">Loading...</div>
         ) : categories.length === 0 ? (
-          <div className="text-center py-12 bg-gray-900 rounded-lg shadow-lg border border-gray-800">
-            <div className="text-6xl mb-4">🏷️</div>
-            <h2 className="text-xl font-semibold mb-2 text-white">No categories yet</h2>
-            <p className="text-gray-400 mb-4">Create categories to start taking notes</p>
+          <div className="card flex flex-col items-center px-6 py-14 text-center">
+            <div className="mb-4 grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-500">
+              <TagIcon width={24} height={24} />
+            </div>
+            <h2 className="mb-1 text-lg font-semibold text-slate-900">No categories yet</h2>
+            <p className="mb-5 text-sm text-slate-500">Create categories to start taking notes</p>
             <a
               href="/categories"
-              className="inline-block px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="btn-primary"
             >
               Create Category
             </a>
           </div>
         ) : (
           <>
-            <div className="bg-gray-900 rounded-lg shadow-lg p-4 mb-6 border border-gray-800">
-              <label className="block text-sm font-medium mb-2 text-gray-300">Select Category</label>
-              <select
-                value={selectedCategoryId || ''}
-                onChange={(e) => setSelectedCategoryId(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </option>
-                ))}
-              </select>
+            <div className="card mb-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+              {selectedCategory && (
+                <div className="flex flex-1 items-center gap-3">
+                  <span
+                    className="grid h-12 w-12 place-items-center rounded-full text-2xl"
+                    style={{ backgroundColor: `${selectedCategory.color}1f` }}
+                  >
+                    {selectedCategory.icon}
+                  </span>
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Category</p>
+                    <h2 className="text-lg font-bold text-slate-900">{selectedCategory.name}</h2>
+                  </div>
+                </div>
+              )}
+              <div className="sm:w-64">
+                <label className="label">Select Category</label>
+                <select
+                  value={selectedCategoryId || ''}
+                  onChange={(e) => setSelectedCategoryId(e.target.value)}
+                  className="input"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {selectedCategory && (
-              <div className="bg-gray-900 rounded-lg shadow-lg p-6 mb-6 border border-gray-800">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-4xl">{selectedCategory.icon}</span>
-                  <h2 className="text-2xl font-semibold text-white">{selectedCategory.name}</h2>
-                </div>
-              </div>
-            )}
-
             {entries.length === 0 ? (
-              <div className="text-center py-12 bg-gray-900 rounded-lg shadow-lg border border-gray-800">
-                <p className="text-gray-400">No entries yet for this category</p>
+              <div className="card flex flex-col items-center px-6 py-12 text-center">
+                <div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-slate-400">
+                  <NoteIcon width={22} height={22} />
+                </div>
+                <p className="text-sm text-slate-500">No entries yet for this category</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="card divide-y divide-slate-100">
                 {entries.map((entry) => (
-                  <div key={entry.id} className="bg-gray-900 rounded-lg shadow-lg p-6 border border-gray-800">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-500 mb-2">
-                          📅 {formatDate(entry.entryDate)}
-                        </div>
-                        <h3 className="text-lg font-semibold mb-2 text-white">{entry.title}</h3>
-                        <p className="text-gray-300 whitespace-pre-wrap">{entry.content}</p>
-                      </div>
-                      <button
-                        onClick={() => handleDelete(entry.id)}
-                        className="px-3 py-1 text-red-400 hover:bg-gray-800 rounded transition-colors ml-4"
-                      >
-                        🗑️
-                      </button>
+                  <div key={entry.id} className="group flex items-start gap-4 p-5">
+                    <div className="hidden h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-400 sm:grid">
+                      <CalendarIcon width={18} height={18} />
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 text-xs font-medium text-slate-400">
+                        {formatDate(entry.entryDate)}
+                      </div>
+                      <h3 className="mb-1 text-base font-semibold text-slate-900">{entry.title}</h3>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{entry.content}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(entry.id)}
+                      className="icon-btn-danger"
+                      aria-label="Delete entry"
+                    >
+                      <TrashIcon width={16} height={16} />
+                    </button>
                   </div>
                 ))}
               </div>
