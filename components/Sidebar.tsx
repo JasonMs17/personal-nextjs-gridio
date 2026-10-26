@@ -25,9 +25,10 @@ interface SidebarProps {
   onNavigate?: () => void
   onClose?: () => void
   isOpen?: boolean
+  isLoading?: boolean
 }
 
-export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChange, onNavigate, onClose, isOpen }: SidebarProps) {
+export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChange, onNavigate, onClose, isOpen, isLoading }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -65,30 +66,36 @@ export default function Sidebar({ workspaces, currentWorkspace, onWorkspaceChang
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {currentWorkspace ? (
-          <>
-            <nav className="space-y-1">
-              {navItems.map((item) => {
-                const isActive = pathname === item.path
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    onClick={onNavigate}
-                    className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-brand-50 text-brand-700'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }`}
-                  >
-                    <Icon className={isActive ? 'text-brand-500' : 'text-slate-400 group-hover:text-slate-600'} />
-                    {item.label}
-                  </Link>
-                )
-              })}
-            </nav>
+        <nav className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.path
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                onClick={onNavigate}
+                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-brand-50 text-brand-700'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <Icon className={isActive ? 'text-brand-500' : 'text-slate-400 group-hover:text-slate-600'} />
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
 
+        {isLoading ? (
+          <div className="mt-8 space-y-2 px-2" aria-label="Loading workspaces">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="h-9 animate-pulse rounded-xl bg-slate-100" />
+            ))}
+          </div>
+        ) : currentWorkspace ? (
+          <>
             <div className="mt-8">
               <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 Workspaces

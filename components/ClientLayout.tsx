@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Workspace } from '@/types'
 import Sidebar from '@/components/Sidebar'
 import Link from 'next/link'
-import { HomeIcon, Logo, MenuIcon } from '@/components/icons'
+import { HomeIcon, MenuIcon } from '@/components/icons'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
@@ -59,19 +59,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Logo />
-          <div className="h-1 w-32 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-brand-500" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar overlay */}
@@ -86,6 +73,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <Sidebar
           workspaces={workspaces}
           currentWorkspace={currentWorkspace}
+          isLoading={isLoading}
           onWorkspaceChange={handleWorkspaceChange}
           onNavigate={() => setIsSidebarOpen(false)}
           onClose={() => setIsSidebarOpen(false)}

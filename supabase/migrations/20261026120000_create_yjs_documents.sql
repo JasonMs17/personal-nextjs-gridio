@@ -42,6 +42,8 @@ create trigger yjs_documents_touch_updated_at
 -- Workspaces/categories are not owned per user in this app, so any authenticated
 -- user may read and write notes (same access model as the rest of the app).
 -- ---------------------------------------------------------------------------
+grant usage on schema public to authenticated;
+
 alter table public.yjs_documents enable row level security;
 
 revoke all on public.yjs_documents from anon;

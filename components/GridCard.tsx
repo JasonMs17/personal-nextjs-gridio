@@ -155,8 +155,6 @@ export default function GridCard({ item, entryDate, onSave, onDelete }: GridCard
 
   return (
     <div className="card group relative flex flex-col overflow-hidden p-5 transition-shadow hover:shadow-lg hover:shadow-slate-200/60">
-      <div className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: item.categoryColor }} />
-
       {/* Header */}
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="flex min-w-0 items-center gap-3 text-sm font-semibold text-slate-900">
