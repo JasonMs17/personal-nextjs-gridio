@@ -13,29 +13,46 @@ const parseDateOnly = (dateStr: string) => {
 }
 
 // GET /api/budget/transactions?date=YYYY-MM-DD
+// GET /api/budget/transactions?from=YYYY-MM-DD&to=YYYY-MM-DD (inclusive range)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const dateStr = searchParams.get('date')
+    const fromStr = searchParams.get('from')
+    const toStr = searchParams.get('to')
 
-    if (!dateStr) {
-      return NextResponse.json(
-        { error: 'date is required (YYYY-MM-DD)' },
-        { status: 400 }
-      )
-    }
+    let dateFilter: Date | { gte: Date; lte: Date }
 
-    const date = parseDateOnly(dateStr)
-    if (!date) {
-      return NextResponse.json(
-        { error: 'invalid date format' },
-        { status: 400 }
-      )
+    if (fromStr || toStr) {
+      const from = fromStr ? parseDateOnly(fromStr) : null
+      const to = toStr ? parseDateOnly(toStr) : null
+      if (!from || !to || from > to) {
+        return NextResponse.json(
+          { error: 'from and to are required (YYYY-MM-DD) and from must not be after to' },
+          { status: 400 }
+        )
+      }
+      dateFilter = { gte: from, lte: to }
+    } else {
+      if (!dateStr) {
+        return NextResponse.json(
+          { error: 'date (YYYY-MM-DD) or from/to is required' },
+          { status: 400 }
+        )
+      }
+      const date = parseDateOnly(dateStr)
+      if (!date) {
+        return NextResponse.json(
+          { error: 'invalid date format' },
+          { status: 400 }
+        )
+      }
+      dateFilter = date
     }
 
     const transactions = await prisma.budgetTransaction.findMany({
-      where: { transactionDate: date },
-      orderBy: { createdAt: 'desc' },
+      where: { transactionDate: dateFilter },
+      orderBy: [{ transactionDate: 'desc' }, { createdAt: 'desc' }],
       include: {
         account: true,
         toAccount: true,
