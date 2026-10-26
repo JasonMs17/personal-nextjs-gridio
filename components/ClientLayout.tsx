@@ -4,17 +4,13 @@ import { useState, useEffect } from 'react'
 import { Workspace } from '@/types'
 import Sidebar from '@/components/Sidebar'
 import Link from 'next/link'
-import { HomeIcon, Logo, LogoutIcon, MenuIcon } from '@/components/icons'
-import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { HomeIcon, Logo, MenuIcon } from '@/components/icons'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const router = useRouter()
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     fetchWorkspaces()
@@ -63,16 +59,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut()
-      localStorage.removeItem('currentWorkspaceId')
-      router.replace('/login')
-    } catch (error) {
-      console.error('Error signing out', error)
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -107,7 +93,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         />
 
         <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
-          <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="mb-6 flex items-center gap-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -131,14 +117,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 </>
               )}
             </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 shadow-xs transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-            >
-              <LogoutIcon width={16} height={16} />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
           </div>
           {children}
         </main>
